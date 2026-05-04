@@ -52,10 +52,13 @@ def predict():
         pred = modelo.predict(features_scaled)[0]
 
         resultados.append({
-            "id": e.get('id'),
-            "nombre": e.get('nombre'),
-            "promedio": features[0],
-            "riesgo": pred
-        })
+    "id": e.get('id'),
+    "nombre": e.get('nombre'),
+    "promedio": features[0],
+    "asistencia": features[1],
+    "tareas": features[2],
+    "prom_tareas": features[3],
+    "riesgo": pred
+})
 
     return jsonify(resultados)
