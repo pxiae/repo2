@@ -1,43 +1,60 @@
 from flask import Flask, request, jsonify
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
 import numpy as np
 
 app = Flask(__name__)
 
-# 🔥 Datos de entrenamiento (ejemplo, puedes mejorar con datos reales)
+# 🔥 DATOS DE ENTRENAMIENTO (puedes mejorarlos luego con datos reales)
+# [promedio, asistencia, tareas%, promedio_tareas]
 X_train = np.array([
-    [30], [40], [50], [55], [60], [65], [70], [80], [90]
+    [30, 40, 20, 35],
+    [45, 50, 40, 50],
+    [55, 60, 60, 55],
+    [65, 70, 70, 65],
+    [75, 80, 80, 75],
+    [85, 90, 90, 85],
 ])
 
 y_train = np.array([
-    "ALTO", "ALTO", "ALTO", "MEDIO", "MEDIO", "MEDIO", "BAJO", "BAJO", "BAJO"
+    "ALTO",
+    "ALTO",
+    "MEDIO",
+    "MEDIO",
+    "BAJO",
+    "BAJO"
 ])
 
-# Modelo KNN
+# 🔥 NORMALIZACIÓN (CLAVE PARA KNN)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+
 modelo = KNeighborsClassifier(n_neighbors=3)
-modelo.fit(X_train, y_train)
+modelo.fit(X_train_scaled, y_train)
 
 
 @app.route('/')
 def home():
-    return "API ACTIVA CON KNN"
+    return "API KNN MULTIVARIABLE ACTIVA"
 
 
 @app.route('/predict', methods=['POST'])
 def predict():
     data = request.json
-
     resultados = []
 
     for e in data:
-        promedio = float(e.get('promedio', 0))
+        features = e.get('features', [0, 0, 0, 0])
 
-        pred = modelo.predict([[promedio]])[0]
+        # 🔥 ESCALAR igual que entrenamiento
+        features_scaled = scaler.transform([features])
+
+        pred = modelo.predict(features_scaled)[0]
 
         resultados.append({
             "id": e.get('id'),
             "nombre": e.get('nombre'),
-            "promedio": promedio,
+            "promedio": features[0],
             "riesgo": pred
         })
 
