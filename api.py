@@ -2,32 +2,42 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
+@app.route('/')
+def home():
+    return "API ACTIVA"
+
 @app.route('/predict', methods=['POST'])
 def predict():
 
-    data = request.get_json()
+    data = request.json
 
     resultados = []
 
     for e in data:
-        promedio = e.get('promedio', 0)
-        faltas = e.get('faltas', 0)
-        estudiante_id = e.get('id')
 
-        if promedio < 51 and faltas > 3:
+        promedio = float(e.get('promedio', 0))
+        faltas = int(e.get('faltas', 0))
+        tareas = int(e.get('tareas_no_entregadas', 0))
+        participacion = float(e.get('participacion', 0))
+
+        # 🧠 lógica mejorada
+        score = promedio + (participacion * 0.2) - (faltas * 3) - (tareas * 4)
+
+        if score < 40:
             riesgo = "ALTO"
-            score = 25
+        elif score < 60:
+            riesgo = "MEDIO"
         else:
             riesgo = "BAJO"
-            score = 75
 
         resultados.append({
-            "id": estudiante_id,
+            "id": e['id'],
+            "nombre": e.get('nombre', ''),
             "riesgo": riesgo,
-            "score": score
+            "score": round(score, 2)
         })
 
     return jsonify(resultados)
 
-if __name__ == "__main__":
-    app.run()
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
