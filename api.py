@@ -2,14 +2,23 @@ from flask import Flask, request, jsonify
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 import numpy as np
-import requests
+import google.generativeai as genai
 import os
 
 app = Flask(__name__)
 
 # ==============================
+# 🔥 CONFIGURAR GEMINI API
+# ==============================
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+
+# ==============================
 # 🔥 DATOS DE ENTRENAMIENTO
 # ==============================
+# [promedio, asistencia, tareas%, promedio_tareas]
 X_train = np.array([
     [30, 40, 20, 35],
     [45, 50, 40, 50],
@@ -38,61 +47,45 @@ modelo = KNeighborsClassifier(n_neighbors=3)
 modelo.fit(X_train_scaled, y_train)
 
 # ==============================
-# 🔑 API KEY (Render ENV)
-# ==============================
-API_KEY = os.getenv("OPENAI_API_KEY")
-
-# ==============================
-# 🧠 IA OPCIONAL
+# 🧠 FUNCIÓN IA (GEMINI)
 # ==============================
 def generar_recomendacion_ia(nombre, promedio, asistencia, tareas, riesgo):
 
-    if not API_KEY:
-        return "❌ SIN API KEY"
-
-    prompt = f"""
-    Estudiante: {nombre}
-    Promedio: {promedio}
-    Asistencia: {asistencia}
-    Tareas: {tareas}
-    Riesgo: {riesgo}
-
-    Genera una recomendación pedagógica corta.
-    """
+    if not GEMINI_API_KEY:
+        return "⚠️ IA no configurada"
 
     try:
-        response = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "gpt-4.1-mini",
-                "messages": [{"role": "user", "content": prompt}]
-            },
-            timeout=10
-        )
+        model = genai.GenerativeModel("gemini-1.5-flash")
 
-        data = response.json()
+        prompt = f"""
+        Eres un asistente educativo.
 
-        # 🔥 VER RESPUESTA COMPLETA
-        print(data)
+        Estudiante: {nombre}
+        Promedio: {promedio}
+        Asistencia: {asistencia}
+        Tareas: {tareas}
+        Nivel de riesgo: {riesgo}
 
-        if "choices" in data:
-            return data['choices'][0]['message']['content']
-        else:
-            return f"❌ IA ERROR: {data.get('error', {}).get('message', 'Respuesta inválida')}"
+        Genera una recomendación pedagógica breve, clara y profesional.
+        """
+
+        response = model.generate_content(prompt)
+
+        return response.text.strip()
 
     except Exception as e:
-        return f"❌ ERROR IA: {str(e)}"
+        return f"❌ Error IA: {str(e)}"
 
-
+# ==============================
+# 🏠 HOME
+# ==============================
 @app.route('/')
 def home():
-    return "API KNN + IA ACTIVA"
+    return "API KNN + GEMINI ACTIVA"
 
-
+# ==============================
+# 🔮 PREDICCIÓN
+# ==============================
 @app.route('/predict', methods=['POST'])
 def predict():
 
@@ -112,7 +105,7 @@ def predict():
         prom_tareas = features[3]
 
         # ==============================
-        # 🔥 REGLAS INTELIGENTES
+        # 🔥 REGLAS (BASE)
         # ==============================
         recomendaciones = []
 
@@ -134,7 +127,7 @@ def predict():
         recomendacion_texto = ", ".join(recomendaciones) if recomendaciones else "Rendimiento estable"
 
         # ==============================
-        # 🧠 IA (OPCIONAL)
+        # 🧠 IA (GEMINI)
         # ==============================
         recomendacion_ia = generar_recomendacion_ia(
             e.get('nombre'),
@@ -157,3 +150,9 @@ def predict():
         })
 
     return jsonify(resultados)
+
+# ==============================
+# 🚀 RUN
+# ==============================
+if __name__ == '__main__':
+    app.run(debug=True)
