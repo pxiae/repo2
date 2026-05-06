@@ -55,7 +55,7 @@ def generar_recomendacion_ia(nombre, promedio, asistencia, tareas, riesgo):
         return "⚠️ IA no configurada"
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
 
         prompt = f"""
         Eres un asistente educativo.
