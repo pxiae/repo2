@@ -74,9 +74,15 @@ def generar_recomendacion_ia(nombre, promedio, asistencia, tareas, riesgo):
             timeout=10
         )
 
-        print(response.text)  # 🔥 IMPORTANTE
+        data = response.json()
 
-        return response.json()['choices'][0]['message']['content']
+        # 🔥 VER RESPUESTA COMPLETA
+        print(data)
+
+        if "choices" in data:
+            return data['choices'][0]['message']['content']
+        else:
+            return f"❌ IA ERROR: {data.get('error', {}).get('message', 'Respuesta inválida')}"
 
     except Exception as e:
         return f"❌ ERROR IA: {str(e)}"
