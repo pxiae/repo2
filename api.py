@@ -48,7 +48,7 @@ API_KEY = os.getenv("OPENAI_API_KEY")
 def generar_recomendacion_ia(nombre, promedio, asistencia, tareas, riesgo):
 
     if not API_KEY:
-        return None  # si no hay API KEY, no usa IA
+        return "❌ SIN API KEY"
 
     prompt = f"""
     Estudiante: {nombre}
@@ -74,10 +74,12 @@ def generar_recomendacion_ia(nombre, promedio, asistencia, tareas, riesgo):
             timeout=10
         )
 
+        print(response.text)  # 🔥 IMPORTANTE
+
         return response.json()['choices'][0]['message']['content']
 
-    except:
-        return None
+    except Exception as e:
+        return f"❌ ERROR IA: {str(e)}"
 
 
 @app.route('/')
